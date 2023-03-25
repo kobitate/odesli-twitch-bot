@@ -47,8 +47,13 @@ let lastSong
 const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
-const sendTrackSong = () =>
+const sendTrackSong = () => {
+  if (!lastSong) {
+    sendMessage('Something went wrong. Maybe try the next song...')
+    return
+  }
   sendMessage(`🎶 Now Playing ${lastSong.trackDisplay} // Stream this track: ${lastSong.universalUrl}`)
+}
 
 const sanitizeTrack = track => {
   return track.replace('Explicit', '').trim()
@@ -75,7 +80,7 @@ lastFmStream.on('nowPlaying', track => {
   console.log({ search })
   spotify.searchTracks(search).then(searchResponse => {
     if (searchResponse.body.tracks.items.length === 0) {
-      twitch.say(TWITCH_CHANNEL, `⚠️ Couldn't find ${trackDisplay}`)
+      sendMessage(TWITCH_CHANNEL, `⚠️ Couldn't find ${trackDisplay}`)
       return
     }
 
@@ -90,7 +95,7 @@ lastFmStream.on('nowPlaying', track => {
   }).catch(error => {
     lastSong = undefined
     console.error(error)
-    twitch.say(TWITCH_CHANNEL, '⚠️ Error searching for track')
+    sendMessage(TWITCH_CHANNEL, '⚠️ Error searching for track')
   })
 })
 
