@@ -4,7 +4,7 @@
   "description": "Twitch bot to get the current song's universal streaming link",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "eslint src"
   },
   "author": "Kobi Tate <kobi@kobitate.com>",
   "license": "MIT",
@@ -15,5 +15,12 @@
     "odesli.js": "^1.0.4",
     "spotify-web-api-node": "^5.0.2",
     "tmi.js": "^1.8.5"
+  },
+  "devDependencies": {
+    "eslint": "^8.36.0",
+    "eslint-config-standard": "^17.0.0",
+    "eslint-plugin-import": "^2.27.5",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^6.1.1"
   }
 }

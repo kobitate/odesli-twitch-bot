@@ -22,7 +22,7 @@ const twitch = new Twitch.Client({
     username: TWITCH_BOT_USERNAME,
     password: TWITCH_OAUTH_TOKEN
   },
-  channels: [ TWITCH_CHANNEL ]
+  channels: [TWITCH_CHANNEL]
 })
 
 const odesli = new Odesli({
@@ -47,7 +47,7 @@ let lastSong
 const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
-const sendTrackSong = () => 
+const sendTrackSong = () =>
   sendMessage(`🎶 Now Playing ${lastSong.trackDisplay} // Stream this track: ${lastSong.universalUrl}`)
 
 const sanitizeTrack = track => {
@@ -55,12 +55,13 @@ const sanitizeTrack = track => {
 }
 
 axios.post('https://accounts.spotify.com/api/token', {
-    grant_type: 'client_credentials'
-  }, {
+  grant_type: 'client_credentials'
+}, {
   headers: {
+    // eslint-disable-next-line quote-props
     'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
     'Content-Type': 'application/x-www-form-urlencoded'
-  },
+  }
 }).then(response => {
   spotify.setAccessToken(response.data.access_token)
   console.log('Succesfully authenticated Spotify. Connecting to LastFM and Twitch...')
@@ -71,11 +72,11 @@ axios.post('https://accounts.spotify.com/api/token', {
 lastFmStream.on('nowPlaying', track => {
   const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
   const trackDisplay = `${sanitizeTrack(track.name)} by ${track.artist['#text']}`
-  console.log({search})
+  console.log({ search })
   spotify.searchTracks(search).then(searchResponse => {
     if (searchResponse.body.tracks.items.length === 0) {
       twitch.say(TWITCH_CHANNEL, `⚠️ Couldn't find ${trackDisplay}`)
-      return;
+      return
     }
 
     const url = searchResponse.body.tracks.items[0].external_urls.spotify
@@ -89,7 +90,7 @@ lastFmStream.on('nowPlaying', track => {
   }).catch(error => {
     lastSong = undefined
     console.error(error)
-    twitch.say(TWITCH_CHANNEL, `⚠️ Error searching for track`)
+    twitch.say(TWITCH_CHANNEL, '⚠️ Error searching for track')
   })
 })
 
@@ -100,18 +101,18 @@ twitch.on('message', (_, user, message) => {
         autoSend = true
         sendMessage('Enabled Now Playing auto send')
       }
-      break;
+      break
     case '!songlink disable':
       if (user.username === TWITCH_CHANNEL.toLowerCase()) {
         autoSend = false
         sendMessage('Disabled Now Playing auto send')
       }
-      break;
+      break
     case '!song':
     case '!track':
     case '!music':
     case '!nowplaying':
       sendTrackSong()
-      break;
+      break
   }
 })
