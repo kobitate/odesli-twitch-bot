@@ -1,4 +1,4 @@
-# Odesli Twitch Bot
+# Universal Music Link Twitch Bot
 
 Sure, you're not exactly supposed to play copyrighted music on Twitch. But,
 for those who are ignoring that rule, link your Twitch viewers to a page with 
@@ -22,6 +22,8 @@ links to just about every streaming platform for the currently playing song.
 | ------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
 | `!songlink [enable\|disable]`                          | Enable or disable automatic sending of the current LastFM song. Only available to channel owner |
 | `!song`<br />`!nowplaying`<br />`!track`<br />`!music` | Send the link for the currently playing song                                                    |
+| `!album`                                               | Send the link for the current song's album                                                      |                                        
+| `!artist`                                              | Send the link for the current song's artist                                                     |
 
 
-> An unofficial product powered by [Odesli](https://odesli.co)
+> An unofficial product powered by [Songwhip](https://songwhip.com)

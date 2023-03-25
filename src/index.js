@@ -1,6 +1,5 @@
 require('dotenv').config()
 const Twitch = require('tmi.js')
-const Odesli = require('odesli.js')
 const LastFm = require('lastfm').LastFmNode
 const Spotify = require('spotify-web-api-node')
 const axios = require('axios')
@@ -25,10 +24,6 @@ const twitch = new Twitch.Client({
   channels: [TWITCH_CHANNEL]
 })
 
-const odesli = new Odesli({
-  version: 'v1-alpha.1'
-})
-
 const lastFm = new LastFm({
   api_key: LASTFM_CLIENT_ID,
   secret: LASTFM_CLIENT_SECRET
@@ -47,12 +42,17 @@ let lastSong
 const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
-const sendTrackSong = () => {
+const getUniversalLink = async url => {
+  const response = await axios.post('https://songwhip.com', { url })
+  return response.data.url
+}
+
+const sendTrack = type => {
   if (!lastSong) {
     sendMessage('Something went wrong. Maybe try the next song...')
     return
   }
-  sendMessage(`🎶 Now Playing ${lastSong.trackDisplay} // Stream this track: ${lastSong.universalUrl}`)
+  sendMessage(`🎶 Now Playing ${lastSong.display[type]} // Stream it: ${lastSong.universalLinks[type]}`)
 }
 
 const sanitizeTrack = track => {
@@ -74,28 +74,42 @@ axios.post('https://accounts.spotify.com/api/token', {
   twitch.connect()
 })
 
-lastFmStream.on('nowPlaying', track => {
+lastFmStream.on('nowPlaying', async track => {
   const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
-  const trackDisplay = `${sanitizeTrack(track.name)} by ${track.artist['#text']}`
-  console.log({ search })
-  spotify.searchTracks(search).then(searchResponse => {
-    if (searchResponse.body.tracks.items.length === 0) {
-      sendMessage(TWITCH_CHANNEL, `⚠️ Couldn't find ${trackDisplay}`)
+  const display = {
+    track: `${sanitizeTrack(track.name)} by ${track.artist['#text']}`,
+    album: `${track.album['#text']} by ${track.artist['#text']}`,
+    artist: track.artist['#text']
+  }
+  // console.log({ search })
+  spotify.searchTracks(search).then(async searchResponse => {
+    const results = searchResponse.body.tracks.items
+
+    if (results.length === 0) {
+      sendMessage(`⚠️ Couldn't find ${display.track}`)
       return
     }
 
-    const url = searchResponse.body.tracks.items[0].external_urls.spotify
-    odesli.fetch(url).then(convertResponse => {
-      const universalUrl = convertResponse.pageUrl
-      lastSong = { trackDisplay, universalUrl }
-      if (autoSend) {
-        sendTrackSong()
-      }
-    })
+    const item = results[0]
+    const spotifyLinks = {
+      track: item.external_urls.spotify,
+      album: item.album.external_urls.spotify,
+      artist: item.artists[0].external_urls.spotify
+    }
+    const universalLinks = {
+      track: await getUniversalLink(spotifyLinks.track),
+      album: await getUniversalLink(spotifyLinks.album),
+      artist: await getUniversalLink(spotifyLinks.artist)
+    }
+    lastSong = { display, track, spotifyLinks, universalLinks }
+    console.log('Song updated', lastSong)
+    if (autoSend) {
+      sendTrack('track')
+    }
   }).catch(error => {
     lastSong = undefined
     console.error(error)
-    sendMessage(TWITCH_CHANNEL, '⚠️ Error searching for track')
+    sendMessage('⚠️ Error searching for track')
   })
 })
 
@@ -117,7 +131,13 @@ twitch.on('message', (_, user, message) => {
     case '!track':
     case '!music':
     case '!nowplaying':
-      sendTrackSong()
+      sendTrack('track')
+      break
+    case '!artist':
+      sendTrack('artist')
+      break
+    case '!album':
+      sendTrack('album')
       break
   }
 })
