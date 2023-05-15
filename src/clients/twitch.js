@@ -1,5 +1,5 @@
 require('dotenv').config()
-const Twitch = require('tmi.js')
+const TwitchChat = require('tmi.js')
 
 const {
   TWITCH_BOT_USERNAME,
@@ -7,11 +7,23 @@ const {
   TWITCH_CHANNEL
 } = process.env
 
-module.exports = Twitch.Client({
-  options: { debug: true },
-  identity: {
-    username: TWITCH_BOT_USERNAME,
-    password: TWITCH_OAUTH_TOKEN
-  },
-  channels: [TWITCH_CHANNEL]
-})
+class Twitch {
+  constructor() {
+    this.client = TwitchChat.Client({
+      options: { debug: true },
+      identity: {
+        username: TWITCH_BOT_USERNAME,
+        password: TWITCH_OAUTH_TOKEN
+      },
+      channels: [TWITCH_CHANNEL]
+    })
+  }
+
+  connect = () => this.client.connect()
+
+  sendMessage = (message) => this.client.say(TWITCH_CHANNEL, message)
+
+  onMessage = (callback) => this.client.on('message', callback)
+}
+
+module.exports = Twitch

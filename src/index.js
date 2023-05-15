@@ -3,7 +3,8 @@ require('dotenv').config()
 const axios = require('axios')
 const { setupCache } = require('axios-cache-interceptor')
 
-const twitch = require('./clients/twitch')
+const Twitch = require('./clients/twitch')
+const twitch = new Twitch()
 
 const LastFm = require('./clients/lastfm')
 const lastFm = new LastFm()
@@ -27,9 +28,6 @@ const debug = (message, level) => {
   console.log(`[${time}] ${color}${level || 'info'}: ${message}\x1b[0m`)
 }
 
-const sendMessage = message =>
-  twitch.say(TWITCH_CHANNEL, message)
-
 const getUniversalLink = async url => {
   // this cache doesn't persist across script restarts, need to expand upon this...
   const response = await cachedAxios.post('https://songwhip.com', { url })
@@ -38,7 +36,7 @@ const getUniversalLink = async url => {
 
 const sendTrack = async (type) => {
   if (!lastSong) {
-    sendMessage('Something went wrong. Maybe try the next song...')
+    twitch.sendMessage('Something went wrong. Maybe try the next song...')
     return
   }
 
@@ -46,7 +44,7 @@ const sendTrack = async (type) => {
     lastSong.universalLinks[type] = await getUniversalLink(lastSong.spotifyLinks[type])
   }
 
-  sendMessage(`🎶 Now Playing ${lastSong.display[type]} // Stream it: ${lastSong.universalLinks[type]}`)
+  twitch.sendMessage(`🎶 Now Playing ${lastSong.display[type]} // Stream it: ${lastSong.universalLinks[type]}`)
 }
 
 const sanitizeTrack = track => {
@@ -115,18 +113,18 @@ lastFm.getStream().on('nowPlaying', async track => {
   })
 })
 
-twitch.on('message', (_, user, message) => {
+twitch.onMessage((_, user, message) => {
   switch (message.toLowerCase()) {
     case '!songlink enable':
       if (user.username === TWITCH_CHANNEL.toLowerCase()) {
         autoSend = true
-        sendMessage('Enabled Now Playing auto send')
+        twitch.sendMessage('Enabled Now Playing auto send')
       }
       break
     case '!songlink disable':
       if (user.username === TWITCH_CHANNEL.toLowerCase()) {
         autoSend = false
-        sendMessage('Disabled Now Playing auto send')
+        twitch.sendMessage('Disabled Now Playing auto send')
       }
       break
     case '!song':
