@@ -1,4 +1,4 @@
-require('dotenv').config()
+const debug = require('./util/debug')
 
 const axios = require('axios')
 const { setupCache } = require('axios-cache-interceptor')
@@ -12,21 +12,10 @@ const lastFm = new LastFm()
 const Spotify = require('./clients/spotify')
 const spotify = new Spotify()
 
-const {
-  TWITCH_CHANNEL
-} = process.env
-
 const cachedAxios = setupCache(axios)
 
 let autoSend = false
 let lastSong
-
-const debug = (message, level) => {
-  const now = new Date()
-  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
-  const color = level === 'error' ? '\x1b[33m' : ''
-  console.log(`[${time}] ${color}${level || 'info'}: ${message}\x1b[0m`)
-}
 
 const getUniversalLink = async url => {
   // this cache doesn't persist across script restarts, need to expand upon this...
@@ -116,13 +105,15 @@ lastFm.onScrobble(async track => {
 twitch.onMessage((user, message) => {
   switch (message) {
     case '!songlink enable':
-      if (user.username === TWITCH_CHANNEL.toLowerCase()) {
+    case '!songwhip enable':
+      if (user.broadcaster || user.mod) {
         autoSend = true
         twitch.sendMessage('Enabled Now Playing auto send')
       }
       break
     case '!songlink disable':
-      if (user.username === TWITCH_CHANNEL.toLowerCase()) {
+    case '!songwhip disable':
+      if (user.broadcaster || user.mod) {
         autoSend = false
         twitch.sendMessage('Disabled Now Playing auto send')
       }
