@@ -31,15 +31,21 @@ const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
 const getUniversalLink = async url => {
+  // this cache doesn't persist across script restarts, need to expand upon this...
   const response = await cachedAxios.post('https://songwhip.com', { url })
   return response.data.url
 }
 
-const sendTrack = type => {
+const sendTrack = async (type) => {
   if (!lastSong) {
     sendMessage('Something went wrong. Maybe try the next song...')
     return
   }
+
+  if (['album', 'artist'].includes(type)) {
+    lastSong.universalLinks[type] = await getUniversalLink(lastSong.spotifyLinks[type])
+  }
+
   sendMessage(`🎶 Now Playing ${lastSong.display[type]} // Stream it: ${lastSong.universalLinks[type]}`)
 }
 
@@ -65,6 +71,7 @@ const searchForTrack = query =>
     }
     const universalLinks = {
       track: await getUniversalLink(spotifyLinks.track)
+      // no longer getting these ahead of time to limit API calls
       // album: await getUniversalLink(spotifyLinks.album),
       // artist: await getUniversalLink(spotifyLinks.artist)
     }
