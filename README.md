@@ -1,5 +1,7 @@
 # Universal Music Link Twitch Bot
 
+![](https://i.imgur.com/9KUATwo.png)
+
 Sure, you're not exactly supposed to play copyrighted music on Twitch. But,
 for those who are ignoring that rule, link your Twitch viewers to a page with 
 links to just about every streaming platform for the currently playing song.
