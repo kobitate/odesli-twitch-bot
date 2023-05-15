@@ -1,42 +1,19 @@
 require('dotenv').config()
-const Twitch = require('tmi.js')
-const LastFm = require('lastfm').LastFmNode
-const Spotify = require('spotify-web-api-node')
+
 const axios = require('axios')
 const { setupCache } = require('axios-cache-interceptor')
 
+const twitch = require('./clients/twitch')
+
+const LastFm = require('./clients/lastfm')
+const lastFm = new LastFm()
+
+const Spotify = require('./clients/spotify')
+const spotify = new Spotify()
 
 const {
-  TWITCH_BOT_USERNAME,
-  TWITCH_OAUTH_TOKEN,
-  TWITCH_CHANNEL,
-  LASTFM_CLIENT_ID,
-  LASTFM_CLIENT_SECRET,
-  LASTFM_USERNAME,
-  SPOTIFY_CLIENT_ID,
-  SPOTIFY_CLIENT_SECRET
+  TWITCH_CHANNEL
 } = process.env
-
-const twitch = new Twitch.Client({
-  options: { debug: true },
-  identity: {
-    username: TWITCH_BOT_USERNAME,
-    password: TWITCH_OAUTH_TOKEN
-  },
-  channels: [TWITCH_CHANNEL]
-})
-
-const lastFm = new LastFm({
-  api_key: LASTFM_CLIENT_ID,
-  secret: LASTFM_CLIENT_SECRET
-})
-
-const spotify = new Spotify({
-  clientId: SPOTIFY_CLIENT_ID,
-  clientSecret: SPOTIFY_CLIENT_SECRET
-})
-
-const lastFmStream = lastFm.stream(LASTFM_USERNAME)
 
 const cachedAxios = setupCache(axios)
 
@@ -70,27 +47,13 @@ const sanitizeTrack = track => {
   return track.replace('Explicit', '').trim()
 }
 
-const getSpotifyToken = () =>
-  axios.post('https://accounts.spotify.com/api/token', {
-    grant_type: 'client_credentials'
-  }, {
-    headers: {
-      // eslint-disable-next-line quote-props
-      'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
-      'Content-Type': 'application/x-www-form-urlencoded'
-    }
-  }).then(response => {
-    spotify.setAccessToken(response.data.access_token)
-    debug('Succesfully authenticated Spotify')
-  })
-
-const searchForTrack = search =>
-  spotify.searchTracks(search).then(async searchResponse => {
+const searchForTrack = query =>
+  spotify.search(query).then(async searchResponse => {
     const results = searchResponse.body.tracks.items
     const { display, track } = lastSong
 
     if (results.length === 0) {
-      debug(`Spotify returned no results for \x1b[33m'${search}'`, 'error')
+      debug(`Spotify returned no results for \x1b[33m'${query}'`, 'error')
       return
     }
 
@@ -101,9 +64,9 @@ const searchForTrack = search =>
       artist: item.artists[0].external_urls.spotify
     }
     const universalLinks = {
-      track: await getUniversalLink(spotifyLinks.track),
-      album: await getUniversalLink(spotifyLinks.album),
-      artist: await getUniversalLink(spotifyLinks.artist)
+      track: await getUniversalLink(spotifyLinks.track)
+      // album: await getUniversalLink(spotifyLinks.album),
+      // artist: await getUniversalLink(spotifyLinks.artist)
     }
     lastSong = { display, track, spotifyLinks, universalLinks }
     debug('Song links converted and saved')
@@ -112,13 +75,13 @@ const searchForTrack = search =>
     }
   })
 
-getSpotifyToken().then(() => {
+spotify.getToken().then(() => {
   debug('Connecting to LastFM and Twitch...')
-  lastFmStream.start()
+  lastFm.getStream().start()
   twitch.connect()
 })
 
-lastFmStream.on('nowPlaying', async track => {
+lastFm.getStream().on('nowPlaying', async track => {
   const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
   const display = {
     track: `${sanitizeTrack(track.name)} by ${track.artist['#text']}`,
@@ -132,7 +95,7 @@ lastFmStream.on('nowPlaying', async track => {
 
     if (error.body && error.body.error.status === 401) {
       debug('Got 401 from Spotify, re-authenticating')
-      getSpotifyToken().then(() => {
+      spotify.getToken().then(() => {
         searchForTrack(search).catch(error2 => {
           console.error('Couldn\'t re-authenticate with Spotify', error2)
         })
