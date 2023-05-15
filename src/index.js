@@ -36,6 +36,8 @@ const spotify = new Spotify({
 
 const lastFmStream = lastFm.stream(LASTFM_USERNAME)
 
+const cachedAxios = setupCache(axios)
+
 let autoSend = false
 let lastSong
 
@@ -50,7 +52,7 @@ const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
 const getUniversalLink = async url => {
-  const response = await axios.post('https://songwhip.com', { url })
+  const response = await cachedAxios.post('https://songwhip.com', { url })
   return response.data.url
 }
 
