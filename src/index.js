@@ -3,6 +3,8 @@ const Twitch = require('tmi.js')
 const LastFm = require('lastfm').LastFmNode
 const Spotify = require('spotify-web-api-node')
 const axios = require('axios')
+const { setupCache } = require('axios-cache-interceptor')
+
 
 const {
   TWITCH_BOT_USERNAME,
@@ -43,7 +45,7 @@ let lastSong
 
 const debug = (message, level) => {
   const now = new Date()
-  const time = `${now.getHours().padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const time = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
   const color = level === 'error' ? '\x1b[33m' : ''
   console.log(`[${time}] ${color}${level || 'info'}: ${message}\x1b[0m`)
 }
