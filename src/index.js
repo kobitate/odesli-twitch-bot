@@ -39,6 +39,13 @@ const lastFmStream = lastFm.stream(LASTFM_USERNAME)
 let autoSend = false
 let lastSong
 
+const debug = (message, level) => {
+  const now = new Date()
+  const time = `${now.getHours().padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
+  const color = level === 'error' ? '\x1b[33m' : ''
+  console.log(`[${time}] ${color}${level || 'info'}: ${message}\x1b[0m`)
+}
+
 const sendMessage = message =>
   twitch.say(TWITCH_CHANNEL, message)
 
@@ -86,7 +93,7 @@ lastFmStream.on('nowPlaying', async track => {
     const results = searchResponse.body.tracks.items
 
     if (results.length === 0) {
-      sendMessage(`⚠️ Couldn't find ${display.track}`)
+      debug(`Spotify returned no results for \x1b[33m'${search}'`, 'error')
       return
     }
 
@@ -102,7 +109,6 @@ lastFmStream.on('nowPlaying', async track => {
       artist: await getUniversalLink(spotifyLinks.artist)
     }
     lastSong = { display, track, spotifyLinks, universalLinks }
-    console.log('Song updated', lastSong)
     if (autoSend) {
       sendTrack('track')
     }
