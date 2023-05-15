@@ -1,7 +1,8 @@
 # Universal Music Link Twitch Bot
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-3c9ad5.svg?style=for-the-badge&labelColor=3ac4f3)](https://standardjs.com) ![Built with Love](https://img.shields.io/badge/built_with-♥-d25b0a.svg?style=for-the-badge&labelColor=e56c17) ![Powered by DMCA Notices](https://img.shields.io/badge/powered_by-DMCA_Notices-5c9741.svg?style=for-the-badge&labelColor=c0d72f)
-![](https://i.imgur.com/9KUATwo.png)
+
+![Twitch Chat Preview](https://i.imgur.com/9KUATwo.png)
 
 
 Sure, you're not exactly supposed to play copyrighted music on Twitch. But,
