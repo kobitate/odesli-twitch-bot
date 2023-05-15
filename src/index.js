@@ -82,11 +82,11 @@ const searchForTrack = query =>
 
 spotify.getToken().then(() => {
   debug('Connecting to LastFM and Twitch...')
-  lastFm.getStream().start()
+  lastFm.connect()
   twitch.connect()
 })
 
-lastFm.getStream().on('nowPlaying', async track => {
+lastFm.onScrobble(async track => {
   const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
   const display = {
     track: `${sanitizeTrack(track.name)} by ${track.artist['#text']}`,

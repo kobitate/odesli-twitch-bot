@@ -16,7 +16,9 @@ class LastFm {
     this.stream = this.client.stream(LASTFM_USERNAME)
   }
 
-  getStream = () => this.stream
+  connect = () => this.stream.start()
+
+  onScrobble = (callback) => this.stream.on('nowPlaying', callback)
 }
 
 module.exports = LastFm
