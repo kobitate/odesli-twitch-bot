@@ -122,6 +122,8 @@ twitch.onMessage((user, message) => {
     case '!track':
     case '!music':
     case '!nowplaying':
+    case '!songlink':
+    case '!songwhip':
       sendTrack('track')
       break
     case '!artist':
