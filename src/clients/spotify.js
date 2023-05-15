@@ -2,6 +2,8 @@ require('dotenv').config()
 const SpotifyApi = require('spotify-web-api-node')
 const axios = require('axios')
 
+const debug = require('../util/debug')
+
 const {
   SPOTIFY_CLIENT_ID,
   SPOTIFY_CLIENT_SECRET
@@ -26,7 +28,7 @@ class Spotify {
       }
     }).then(response => {
       this.client.setAccessToken(response.data.access_token)
-      // debug('Succesfully authenticated Spotify')
+      debug('Succesfully authenticated Spotify')
     })
   }
 
