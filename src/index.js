@@ -66,31 +66,24 @@ const sanitizeTrack = track => {
   return track.replace('Explicit', '').trim()
 }
 
-axios.post('https://accounts.spotify.com/api/token', {
-  grant_type: 'client_credentials'
-}, {
-  headers: {
-    // eslint-disable-next-line quote-props
-    'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
-    'Content-Type': 'application/x-www-form-urlencoded'
-  }
-}).then(response => {
-  spotify.setAccessToken(response.data.access_token)
-  console.log('Succesfully authenticated Spotify. Connecting to LastFM and Twitch...')
-  lastFmStream.start()
-  twitch.connect()
-})
+const getSpotifyToken = () =>
+  axios.post('https://accounts.spotify.com/api/token', {
+    grant_type: 'client_credentials'
+  }, {
+    headers: {
+      // eslint-disable-next-line quote-props
+      'Authorization': `Basic ${Buffer.from(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`).toString('base64')}`,
+      'Content-Type': 'application/x-www-form-urlencoded'
+    }
+  }).then(response => {
+    spotify.setAccessToken(response.data.access_token)
+    debug('Succesfully authenticated Spotify')
+  })
 
-lastFmStream.on('nowPlaying', async track => {
-  const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
-  const display = {
-    track: `${sanitizeTrack(track.name)} by ${track.artist['#text']}`,
-    album: `${track.album['#text']} by ${track.artist['#text']}`,
-    artist: track.artist['#text']
-  }
-  // console.log({ search })
+const searchForTrack = search =>
   spotify.searchTracks(search).then(async searchResponse => {
     const results = searchResponse.body.tracks.items
+    const { display, track } = lastSong
 
     if (results.length === 0) {
       debug(`Spotify returned no results for \x1b[33m'${search}'`, 'error')
@@ -109,13 +102,42 @@ lastFmStream.on('nowPlaying', async track => {
       artist: await getUniversalLink(spotifyLinks.artist)
     }
     lastSong = { display, track, spotifyLinks, universalLinks }
+    debug('Song links converted and saved')
     if (autoSend) {
       sendTrack('track')
     }
-  }).catch(error => {
+  })
+
+getSpotifyToken().then(() => {
+  debug('Connecting to LastFM and Twitch...')
+  lastFmStream.start()
+  twitch.connect()
+})
+
+lastFmStream.on('nowPlaying', async track => {
+  const search = `artist:${track.artist['#text']} track:${sanitizeTrack(track.name)}`
+  const display = {
+    track: `${sanitizeTrack(track.name)} by ${track.artist['#text']}`,
+    album: `${track.album['#text']} by ${track.artist['#text']}`,
+    artist: track.artist['#text']
+  }
+  debug(`Scrobble received: \x1b[36m${display.track}`)
+  lastSong = { display, track }
+  searchForTrack(search).catch(error => {
     lastSong = undefined
+
+    if (error.body && error.body.error.status === 401) {
+      debug('Got 401 from Spotify, re-authenticating')
+      getSpotifyToken().then(() => {
+        searchForTrack(search).catch(error2 => {
+          console.error('Couldn\'t re-authenticate with Spotify', error2)
+        })
+      })
+    } else {
+      console.error(error)
+    }
+    debug('Spotify search encountered an error', 'error')
     console.error(error)
-    sendMessage('⚠️ Error searching for track')
   })
 })
 
