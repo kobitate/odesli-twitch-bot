@@ -113,8 +113,8 @@ lastFm.onScrobble(async track => {
   })
 })
 
-twitch.onMessage((_, user, message) => {
-  switch (message.toLowerCase()) {
+twitch.onMessage((user, message) => {
+  switch (message) {
     case '!songlink enable':
       if (user.username === TWITCH_CHANNEL.toLowerCase()) {
         autoSend = true

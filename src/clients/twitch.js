@@ -23,7 +23,9 @@ class Twitch {
 
   sendMessage = (message) => this.client.say(TWITCH_CHANNEL, message)
 
-  onMessage = (callback) => this.client.on('message', callback)
+  onMessage = (callback) =>
+    this.client.on('message', (_channel, user, message) =>
+      callback(user, message.toLowerCase())) // automatically lowercase the message :)
 }
 
 module.exports = Twitch
